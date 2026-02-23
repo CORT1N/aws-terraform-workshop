@@ -1,0 +1,18 @@
+resource "aws_internet_gateway" "int-gw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "esgi-int-gat-01"
+  }
+}
+
+resource "aws_nat_gateway" "nat-gw" {
+  connectivity_type = "private"
+  subnet_id     = aws_subnet.all["priv-01"].id
+
+  tags = {
+    Name = "esgi-nat-gat-01"
+  }
+
+  depends_on = [aws_internet_gateway.int-gw]
+}

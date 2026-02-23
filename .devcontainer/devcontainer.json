@@ -1,0 +1,34 @@
+{
+    "name": "OpenTofu Devcontainer",
+    "build": {
+        "context": ".",
+        "dockerfile": "Dockerfile"
+    },
+    "shutdownAction": "stopContainer",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "extensions.verifySignature": false
+            },
+            "extensions": [
+                "esbenp.prettier-vscode",
+                "aaron-bond.better-comments",
+                "usernamehw.errorlens",
+                "BriteSnow.vscode-toggle-quotes",
+                "tal7aouy.icons",
+                "kisstkondoros.vscode-gutter-preview",
+                "fnando.linter",
+                "quicktype.quicktype",
+                "christian-kohler.path-intellisense",
+                "styled-components.vscode-styled-components",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "wholroyd.jinja",
+                "hashicorp.terraform"
+            ]
+        }
+    },
+    "mounts": [
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly"
+    ]
+}
