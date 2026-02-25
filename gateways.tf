@@ -6,13 +6,19 @@ resource "aws_internet_gateway" "int-gw" {
   }
 }
 
+resource "aws_eip" "nat-eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "esgi-nat-eip-01"
+  }
+}
+
 resource "aws_nat_gateway" "nat-gw" {
-  connectivity_type = "private"
+  allocation_id = aws_eip.nat-eip.id
   subnet_id     = aws_subnet.all["priv-01"].id
 
   tags = {
     Name = "esgi-nat-gat-01"
   }
-
-  depends_on = [aws_internet_gateway.int-gw]
 }

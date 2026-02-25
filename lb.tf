@@ -38,3 +38,36 @@ resource "aws_lb_listener" "lb-listener" {
     target_group_arn = aws_lb_target_group.tg.arn
   }
 }
+
+# resource "aws_acm_certificate" "cert" {
+#   domain_name       = aws_lb.lb.dns_name
+#   validation_method = "DNS"
+
+#   tags = {
+#     Name = "esgi-cert-01"
+#   }
+
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
+
+# resource "aws_acm_certificate_validation" "cert_validation" {
+#   certificate_arn         = aws_acm_certificate.cert.arn
+#   validation_record_fqdns = [for record in aws_acm_certificate.cert.domain_validation_options : record.resource_record_name]
+# }
+
+# resource "aws_lb_listener" "https-lb-listener" {
+#   load_balancer_arn = aws_lb.lb.arn
+#   port              = 443
+#   protocol          = "HTTPS"
+#   ssl_policy        = "ELBSecurityPolicy-2016-08"
+#   certificate_arn   = aws_acm_certificate.cert.arn
+
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.tg.arn
+#   }
+
+#   depends_on = [aws_acm_certificate_validation.cert_validation]
+# }

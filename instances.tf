@@ -33,6 +33,34 @@
 #   }
 # }
 
+resource "aws_instance" "bastion" {
+  ami                    = data.aws_ami.amazon-linux.id
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.all["pub-01"].id
+  vpc_security_group_ids = [aws_security_group.sg.id]
+  key_name               = aws_key_pair.key.key_name
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "esgi-bastion-01"
+  }
+}
+
+resource "aws_network_interface" "internal-bastion" {
+  subnet_id   = aws_subnet.all["priv-01"].id
+  security_groups = [aws_security_group.sg.id]
+
+  tags = {
+    Name = "primary_network_interface"
+  }
+}
+
+resource "aws_network_interface_attachment" "internal-bastion-attachment" {
+  instance_id          = aws_instance.bastion.id
+  network_interface_id = aws_network_interface.internal-bastion.id
+  device_index         = 1
+}
+
 resource "aws_launch_template" "esgi" {
   image_id      = data.aws_ami.amazon-linux.id
   instance_type = "t3.micro"
@@ -40,7 +68,7 @@ resource "aws_launch_template" "esgi" {
   key_name               = aws_key_pair.key.key_name
 
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     security_groups             = [aws_security_group.sg.id]
   }
 
@@ -56,7 +84,7 @@ resource "aws_launch_template" "esgi" {
 
 resource "aws_autoscaling_group" "asg" {
   name                = "esgi-asg-01"
-  vpc_zone_identifier = [for k, v in local.subnets : aws_subnet.all[k].id if v.public]
+  vpc_zone_identifier = [for k, v in local.subnets : aws_subnet.all[k].id if !v.public]
   target_group_arns   = [aws_lb_target_group.tg.arn]
 
   min_size         = 2
