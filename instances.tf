@@ -7,8 +7,8 @@
 #   associate_public_ip_address = true
 
 #   provisioner "file" {
-#     source = "nginx.sh"
-#     destination = "/tmp/nginx.sh"
+#     source = "scripts/nginx.sh"
+#     destination = "/tmp/scripts/nginx.sh"
 #     connection {
 #         user = "ec2-user"
 #         private_key = file("/home/vscode/.ssh/id_rsa")
@@ -18,8 +18,8 @@
 
 #   provisioner "remote-exec" {
 #     inline = [
-#           "chmod +x /tmp/nginx.sh",
-#           "sudo /tmp/nginx.sh"
+#           "chmod +x /tmp/scripts/nginx.sh",
+#           "sudo /tmp/scripts/nginx.sh"
 #     ]
 #     connection {
 #         user = "ec2-user"
@@ -72,7 +72,7 @@ resource "aws_launch_template" "esgi" {
     security_groups             = [aws_security_group.sg.id]
   }
 
-  user_data = base64encode(file("nginx.sh"))
+  user_data = base64encode(file("scripts/nginx.sh"))
 
   tag_specifications {
     resource_type = "instance"
