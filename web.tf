@@ -1,18 +1,18 @@
 resource "aws_key_pair" "all" {
-  for_each = local.ssh_keys
-  key_name   = "${local.infra.name}-${each.key}"
+  for_each = var.ssh_keys
+  key_name   = "${var.infra_name}-${each.key}"
   public_key = each.value
 }
 
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.main.id
   instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.all["pub-01"].id
+  subnet_id              = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.main.id]
   key_name               = aws_key_pair.all["lucas"].key_name
   associate_public_ip_address = true
   tags = {
-    Name = "${local.infra.name}-bastion"
+    Name = "${var.infra_name}-bastion"
   }
 }
 
@@ -37,24 +37,24 @@ resource "aws_launch_template" "main" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = local.infra.name
+      Name = var.infra_name
     }
   }
 }
 
 resource "aws_lb" "main" {
-  name               = local.infra.name
+  name               = var.infra_name
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.main.id]
-  subnets            = [for k, v in local.subnets : aws_subnet.all[k].id if v.public]
+  subnets            = aws_subnet.public[*].id
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
 resource "aws_lb_target_group" "http" {
-  name     = local.infra.name
+  name     = var.infra_name
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
@@ -69,7 +69,7 @@ resource "aws_lb_target_group" "http" {
   }
 
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
@@ -84,8 +84,8 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_autoscaling_group" "main" {
-  name                = local.infra.name
-  vpc_zone_identifier = [for k, v in local.subnets : aws_subnet.all[k].id if !v.public]
+  name                = var.infra_name
+  vpc_zone_identifier = aws_subnet.private[*].id
   target_group_arns   = [aws_lb_target_group.http.arn]
 
   min_size         = 2
@@ -100,7 +100,7 @@ resource "aws_autoscaling_group" "main" {
 
   tag {
     key                 = "Name"
-    value               = "${local.infra.name}-asg"
+    value               = "${var.infra_name}-asg"
     propagate_at_launch = true
   }
 }

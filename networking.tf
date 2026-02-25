@@ -1,42 +1,54 @@
 resource "aws_vpc" "main" {
-  cidr_block = local.vpc.cidr
+  cidr_block = var.vpc_cidr
   instance_tenancy = "default"
   tags = {
-      Name = local.infra.name
+      Name = var.infra_name
   }
 }
 
-resource "aws_subnet" "all" {
-  for_each = local.subnets
+resource "aws_subnet" "private" {
+  count = length(var.subnets.private)
 
   vpc_id            = aws_vpc.main.id
-  cidr_block        = each.value.cidr
-  availability_zone = each.value.az
+  cidr_block        = var.subnets.private[count.index]
+  availability_zone = data.aws_availability_zones.available.names[count.index]
   tags = {
-    Name = "esgi-${each.key}"
-    Type = each.value.public ? "public" : "private"
+    Name = "esgi-priv-${count.index + 1}"
+    Type = "private"
+  }
+}
+
+resource "aws_subnet" "public" {
+  count = length(var.subnets.public)
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnets.public[count.index]
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  tags = {
+    Name = "esgi-public-${count.index + 1}"
+    Type = "public"
   }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
 resource "aws_eip" "main" {
   domain = "vpc"
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.main.id
-  subnet_id     = aws_subnet.all["pub-01"].id
+  subnet_id     = aws_subnet.public[0].id
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
@@ -49,7 +61,7 @@ resource "aws_route_table" "main_private" {
   }
 
   tags = {
-    Name = "${local.infra.name}-private"
+    Name = "${var.infra_name}-private"
   }
 }
 
@@ -62,15 +74,22 @@ resource "aws_route_table" "main_public" {
   }
 
   tags = {
-    Name = "${local.infra.name}-public"
+    Name = "${var.infra_name}-public"
   }
 }
 
-resource "aws_route_table_association" "all" {
-    for_each = local.subnets
+resource "aws_route_table_association" "private" {
+    count = length(var.subnets.private)
 
-    subnet_id      = aws_subnet.all[each.key].id
-    route_table_id = each.value.public ? aws_route_table.main_public.id : aws_route_table.main_private.id
+    subnet_id      = aws_subnet.private[count.index].id
+    route_table_id = aws_route_table.main_private.id
+}
+
+resource "aws_route_table_association" "public" {
+    count = length(var.subnets.public)
+
+    subnet_id      = aws_subnet.public[count.index].id
+    route_table_id = aws_route_table.main_public.id
 }
 
 resource "aws_security_group" "main" {
@@ -98,14 +117,14 @@ resource "aws_security_group" "main" {
   }
 
   tags = {
-    Name = local.infra.name
+    Name = var.infra_name
   }
 }
 
 resource "aws_network_interface" "bastion_internal" {
-  subnet_id   = aws_subnet.all["priv-01"].id
+  subnet_id   = aws_subnet.private[0].id
   security_groups = [aws_security_group.main.id]
   tags = {
-    Name = "${local.infra.name}-bastion-internal"
+    Name = "${var.infra_name}-bastion-internal"
   }
 }

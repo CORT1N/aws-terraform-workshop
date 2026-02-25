@@ -1,3 +1,7 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 data "aws_ami" "main" {
   most_recent = true
 
@@ -13,3 +17,7 @@ data "aws_ami" "main" {
 
   owners = ["amazon"]
 }
+
+# data "tls_certificate" "cluster" {
+#   url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+# }
