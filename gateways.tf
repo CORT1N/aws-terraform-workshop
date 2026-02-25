@@ -16,7 +16,7 @@ resource "aws_eip" "nat-eip" {
 
 resource "aws_nat_gateway" "nat-gw" {
   allocation_id = aws_eip.nat-eip.id
-  subnet_id     = aws_subnet.all["priv-01"].id
+  subnet_id     = aws_subnet.all["pub-01"].id
 
   tags = {
     Name = "esgi-nat-gat-01"
